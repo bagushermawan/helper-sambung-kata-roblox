@@ -13,7 +13,7 @@ const words = text
 
 const uniqueWords = [...new Set(words)];
 
-fs.writeFileSync("words.json", JSON.stringify(uniqueWords, null, 2));
+fs.writeFileSync("datasetBaru.json", JSON.stringify(uniqueWords, null, 2));
 
 console.log("Total kata bersih:", uniqueWords.length);
-console.log("words.json berhasil dibuat ✅");
+console.log("datasetBaru.json berhasil dibuat ✅");
