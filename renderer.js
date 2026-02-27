@@ -7,22 +7,30 @@ let words = require("./words.json");
 const usedFilePath = path.join(__dirname, "usedWords.json");
 
 // ================= PREFIX INDEX =================
-const prefixMap = {};
-const prefixCount = {};
+const MAX_PREFIX_LENGTH = 3;
+const prefixMap = {
+  1: {},
+  2: {},
+  3: {},
+};
 
 function buildPrefixMap() {
-  for (const word of words) {
-    const firstTwo = word.slice(0, 2);
-
-    if (!prefixMap[firstTwo]) {
-      prefixMap[firstTwo] = [];
-    }
-
-    prefixMap[firstTwo].push(word);
+  for (let len = 1; len <= MAX_PREFIX_LENGTH; len++) {
+    prefixMap[len] = {};
   }
 
-  for (const key in prefixMap) {
-    prefixCount[key] = prefixMap[key].length;
+  for (const word of words) {
+    for (let len = 1; len <= MAX_PREFIX_LENGTH; len++) {
+      if (word.length >= len) {
+        const prefix = word.slice(0, len);
+
+        if (!prefixMap[len][prefix]) {
+          prefixMap[len][prefix] = [];
+        }
+
+        prefixMap[len][prefix].push(word);
+      }
+    }
   }
 }
 
@@ -72,22 +80,52 @@ function performSearch() {
     return;
   }
 
-  const basePrefix = value.slice(0, 2);
-  const baseList = prefixMap[basePrefix] || [];
+  const inputLength = Math.min(value.length, MAX_PREFIX_LENGTH);
+  const basePrefix = value.slice(0, inputLength);
+
+  const baseList = prefixMap[inputLength][basePrefix] || [];
+
   const candidates = baseList.filter((w) => w.startsWith(value));
 
   const ranked = candidates.map((word) => {
-    const nextPrefix = word.slice(-2);
-    const nextCount = prefixCount[nextPrefix] || 0;
+    const prefixResults = {};
+    let isAutoWin = false;
+    let minOptions = Infinity;
+
+    for (let len = 1; len <= MAX_PREFIX_LENGTH; len++) {
+      if (word.length < len) continue;
+
+      const nextPrefix = word.slice(-len);
+
+      const nextOptions =
+        prefixMap[len][nextPrefix]?.filter(
+          (w) => w !== word && !usedWords.has(w),
+        ).length || 0;
+
+      prefixResults[len] = nextOptions;
+
+      if (nextOptions === 0) {
+        isAutoWin = true;
+      }
+
+      if (nextOptions < minOptions) {
+        minOptions = nextOptions;
+      }
+    }
 
     return {
       word,
-      nextCount,
+      prefixResults,
+      autoWin: isAutoWin,
+      minOptions,
     };
   });
 
-  ranked.sort((a, b) => a.nextCount - b.nextCount);
-
+ ranked.sort((a, b) => {
+   if (a.autoWin && !b.autoWin) return -1;
+   if (!a.autoWin && b.autoWin) return 1;
+   return a.minOptions - b.minOptions;
+ });
   const result = ranked.map((r) => r.word);
 
   const unused = result.filter((w) => !usedWords.has(w));
@@ -100,9 +138,33 @@ function performSearch() {
   currentResults = finalResult;
 
   if (ranked.length > 0) {
-    best.innerText = `😈 Rekomendasi Menyusahkan: ${ranked[0].word} (opsi lawan: ${ranked[0].nextCount})`;
+    const top = ranked[0];
+
+    let message = "";
+
+    if (top.autoWin) {
+      message += `☠ AUTO WIN: ${top.word}<br>`;
+    } else {
+      message += `😈 ${top.word}\n`;
+    }
+
+    for (let len = MAX_PREFIX_LENGTH; len >= 1; len--) {
+      if (top.prefixResults[len] !== undefined) {
+        const count = top.prefixResults[len];
+        let color = "#ffffff";
+
+        if (count === 0) color = "#ff4444";
+        else if (count <= 50) color = "#ffcc00";
+
+        message += `<span style="color:${color}">
+      prefix ${len} huruf → ${count} opsi
+    </span><br>`;
+      }
+    }
+
+    best.innerHTML = message.trim();
   } else {
-    best.innerText = "❌ Tidak ditemukan";
+    best.innerHTML = "❌ Tidak ditemukan";
   }
 
   updateCounter(result.length, unused.length);
@@ -160,10 +222,16 @@ function deleteWord(word) {
 
   usedWords.delete(word);
 
-  const firstTwo = word.slice(0, 2);
-  if (prefixMap[firstTwo]) {
-    prefixMap[firstTwo] = prefixMap[firstTwo].filter((w) => w !== word);
-    prefixCount[firstTwo] = prefixMap[firstTwo].length;
+  for (let len = 1; len <= MAX_PREFIX_LENGTH; len++) {
+    if (word.length >= len) {
+      const prefix = word.slice(0, len);
+
+      if (prefixMap[len][prefix]) {
+        prefixMap[len][prefix] = prefixMap[len][prefix].filter(
+          (w) => w !== word,
+        );
+      }
+    }
   }
 
   fs.writeFileSync(wordsPath, JSON.stringify(words, null, 2));
@@ -190,12 +258,17 @@ function addNewWord() {
 
   words.push(newWord);
 
-  const firstTwo = newWord.slice(0, 2);
-  if (!prefixMap[firstTwo]) {
-    prefixMap[firstTwo] = [];
+  for (let len = 1; len <= MAX_PREFIX_LENGTH; len++) {
+    if (newWord.length >= len) {
+      const prefix = newWord.slice(0, len);
+
+      if (!prefixMap[len][prefix]) {
+        prefixMap[len][prefix] = [];
+      }
+
+      prefixMap[len][prefix].push(newWord);
+    }
   }
-  prefixMap[firstTwo].push(newWord);
-  prefixCount[firstTwo] = prefixMap[firstTwo].length;
 
   fs.writeFileSync(wordsPath, JSON.stringify(words, null, 2));
 
@@ -263,7 +336,7 @@ document.addEventListener("keydown", (e) => {
 
 function clearAll() {
   input.value = "";
-  best.innerText = "";
+  best.innerHTML = "";
   list.innerHTML = "";
   counter.innerText = "";
   input.focus();
