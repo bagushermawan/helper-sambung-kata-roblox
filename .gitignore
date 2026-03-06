@@ -2,3 +2,5 @@ node_modules/
 dist/
 build/
 usedWords.json
+usedWords2.json
+samwords/
