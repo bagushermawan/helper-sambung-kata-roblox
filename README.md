@@ -1,30 +1,31 @@
-# 🔥 Helper Sambung Kata Roblox
+# 🔥 Helper Sambung Kata Roblox 🔥
 
-A lightweight desktop helper tool built with Electron to assist in playing Roblox word-chain (Sambung Kata) games strategically.
+Aplikasi desktop ringan berbasis Electron yang dirancang khusus untuk membantu memenangkan game [Sambung Kata](https://www.roblox.com/id/games/130342654546662/) di **Roblox** dengan strategi mematikan.
 
-## 🚀 Features
+## 🚀 Fitur Unggulan
 
-- 🔎 Fast prefix-based word search
-- 😈 Smart ranking system (prioritizes hardest follow-up for opponents)
-- 📊 Remaining unused word counter
-- 🧠 Tracks used words automatically
-- ➕ Add or delete custom words
-- 🪟 Always-on-top floating window
-- ⚡ Optimized for large word datasets (30k+ words)
-
----
-
-## 🛠 Built With
-
-- Electron
-- Node.js
-- Vanilla JavaScript
+- 🔎 **Pencarian Cepat & Ringan:** Menggunakan teknik *debouncing* (300ms) sehingga aplikasi tetap anti-lag meski mengolah lebih dari 30.000 kata.
+- ☠️ **Mode Skakmat (Auto-Win):** Algoritma *auto-pilot* yang otomatis menyaring dan memprioritaskan kata dengan akhiran mematikan (*Deadly Suffixes*) untuk mengunci pergerakan lawan.
+- 🎯 **Target Akhiran Manual:** Pada Mode Normal, kamu bisa memasukkan target akhiran huruf spesifik untuk menjebak lawan secara manual.
+- 😈 **Sistem Ranking Cerdas:** Mengurutkan kata berdasarkan jumlah opsi balasan lawan. Semakin sedikit opsi lawan (mendekati 0), semakin tinggi posisi kata tersebut.
+- 🧠 **Pelacakan Kata Otomatis:** Otomatis mendata kata yang sudah dipakai. Tersedia tombol *Hide Used* dan *Used Only* untuk manajemen daftar kata.
+- ➕ **Manajemen Kata Kustom:** Tambah atau hapus kata langsung dari dalam aplikasi.
+- 🪟 **UI Elegan & Fungsional:** Jendela transparan efek kaca (blur), *always-on-top*, *frameless*, lengkap dengan tuas *resize* kustom yang nyaman ditarik di pojok layar.
+- 🚀 **Dual Engine Support:** Mendukung pergantian *database* kata secara instan hanya dengan satu tombol.
 
 ---
 
-## 📦 Installation
+## 🛠 Dibangun Menggunakan
 
-Clone the repository:
+- [Electron](https://electronjs.org/)
+- [Node.js](https://nodejs.org/)
+- Vanilla JavaScript, HTML5, & CSS3 (Tanpa framework tambahan)
+
+---
+
+## 📦 Instalasi & Cara Penggunaan
+
+Clone repository ini ke komputer kamu:
 
 ```bash
 git clone https://github.com/bagushermawan/helper-sambung-kata-roblox.git
@@ -35,30 +36,30 @@ npm start
 
 ---
 
-## 📂 Project Structure
+## 📂 Struktur Project
 
 ```
-main.js        → Electron main process
-renderer.js    → Word logic & UI logic
-index.html     → UI layout
-words.json     → Word database
+main.js      → Proses utama Electron (Pengaturan Window, IPC, State)
+renderer.js  → Logika inti aplikasi (Pencarian, Algoritma Skakmat, DOM UI)
+index.html   → Tata letak UI & Styling CSS
+words.json   → Database utama daftar kata (Engine 1)
+words2.json  → Database alternatif daftar kata (Engine 2)
 ```
 
 ---
 
-## 🧠 Strategy Logic
+## 🧠 Logika Strategi (Cara Kerja Mesin)
 
-The bot ranks words by calculating how many possible next-prefix continuations exist.
-
-The fewer the opponent options, the higher the word ranks.
+- **Mode Normal:** Mengalkulasi sisa opsi lawan. Kata dengan kemungkinan balasan 0 akan diberi label **AUTO WIN**.
+- **Mode Skakmat:** Mesin akan memfilter ratusan kata dalam sepersekian detik dan HANYA menampilkan kata-kata yang berakhiran sulit (contoh: cy, o, ax, x, ah, ps, dll). Diurutkan dari yang belum pernah dipakai hingga yang mematikan.
 
 ---
 
-## 📝 Notes
+## 📝 Catatan Penting
 
-- `node_modules` is excluded from the repository.
-- `usedWords.json` is local-only and not committed.
-- Designed for performance with ~30k word entries.
+- Folder `node_modules` tidak disertakan dalam repository ini (otomatis terbuat saat `npm install`).
+- File `usedWords.json` (penyimpan riwayat kata yang sudah dipakai) bersifat lokal dan tidak akan di-commit ke GitHub.
+- Aplikasi dirancang scalable dan sudah diuji berjalan mulus dengan ~30.000 entri kata.
 
 ---
 
