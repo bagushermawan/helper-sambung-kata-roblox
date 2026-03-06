@@ -340,17 +340,68 @@
         opacity: 0.4;
         cursor: not-allowed;
       }
-
-      /* ================= FOOTER ================= */
+      
+           /* ================= FOOTER ================= */
       .footer {
-        padding: 6px;
-        text-align: center;
+        padding: 6px 12px; /* Padding kiri-kanan dilebarkan sedikit */
         background: #151515;
         border-top: 1px solid #222;
+        border-bottom: 1px solid #555555;
         font-size: 11px;
         color: #888;
         border-radius: 6px;
         margin-top: auto;
+        margin-bottom: auto;
+        
+        /* TAMBAHAN BARU: Ubah jadi Flexbox agar sejajar kiri-kanan */
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      /* ================= CUSTOM RESIZE HANDLE ================= */
+      #resize-handle {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 18px; /* Dilebarkan sedikit agar garisnya lebih tegas */
+        height: 18px;
+        cursor: nwse-resize;
+        z-index: 10000;
+        -webkit-app-region: no-drag;
+        border-bottom-right-radius: 6px;
+        opacity: 0.6; /* Agak redup saat diam */
+        transition: all 0.2s ease;
+        
+        /* Motif 3 Garis Diagonal (Grip) ala UI Hacker/Gaming */
+        background-image: linear-gradient(
+          135deg, 
+          transparent 40%, 
+          
+          rgba(136, 136, 136, 0.4) 40%, 
+          rgba(136, 136, 136, 0.4) 50%, 
+          
+          transparent 50%, 
+          transparent 65%, 
+          
+          rgba(136, 136, 136, 0.7) 65%, 
+          rgba(136, 136, 136, 0.7) 75%, 
+          
+          transparent 75%, 
+          transparent 90%, 
+          
+          #888888 90%, 
+          #888888 100%
+        );
+      }
+
+      #resize-handle:hover {
+        opacity: 1;
+        /* Menyala putih terang saat ditarik */
+        filter: drop-shadow(-2px -2px 4px rgba(255, 255, 255, 0.4));
+        transform: scale(1.1); 
+        transform-origin: bottom right;
       }
     </style>
   </head>
@@ -363,7 +414,7 @@
           justify-content: center;
           align-items: center;
           position: relative;
-          margin-bottom: 5px;
+          margin-bottom: 15px;
           -webkit-app-region: drag;
           cursor: grab;
         "
@@ -442,8 +493,13 @@
 
     <div class="footer">
       <span id="engineIndicator"></span>
-    </div>
+      
+      <div style="font-size: 10px; color: #555; pointer-events: none; font-family: monospace; padding-right: 15px;">
+        BAHERNOL-DEV-v1.1
+      </div>
 
+      <div id="resize-handle"></div>
+    </div>
     <script>
       const { ipcRenderer } = require("electron");
 
@@ -491,23 +547,5 @@
       window.addEventListener("resize", applyAutoScale);
     </script>
     </div> 
-
-    <div
-      style="
-        position: fixed;
-        bottom: 8px;
-        right: 15px;
-        font-size: 10px;
-        color: #555;
-        pointer-events: none;
-        font-family: monospace;
-        z-index: 9999;
-        background: transparent;
-      "
-    >
-      BAHERNOL-DEV-v1.1
-    </div>
-  </body>
-</html>
   </body>
 </html>

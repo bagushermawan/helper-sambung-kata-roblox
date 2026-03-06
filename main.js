@@ -70,6 +70,23 @@ ipcMain.on("close-app", () => {
   }
 });
 
+// Tambahkan listener untuk custom resize
+ipcMain.on("resize-window", (event, { width, height }) => {
+  if (win) {
+    const bounds = win.getBounds();
+    // Batasi ukuran minimal agar tidak terlalu kecil (misal minimal 300x400)
+    const newWidth = Math.max(300, Math.floor(width));
+    const newHeight = Math.max(400, Math.floor(height));
+    
+    win.setBounds({
+      x: bounds.x,
+      y: bounds.y,
+      width: newWidth,
+      height: newHeight
+    });
+  }
+});
+
 app.whenReady().then(createWindow);
 
 app.on("window-all-closed", () => {

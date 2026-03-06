@@ -29,7 +29,35 @@ collapseBtn.addEventListener("click", () => {
 });
 
 // ================= TARGET AKHIRAN (HEURISTIC) =================
-const DEADLY_SUFFIXES = ["cy", "o", "ax", "x", "ah","ux", "ps", "ny", "is", "ur", "kh", "eh", "ih", "ai", "ia", "au", "sme", "if", "tif", "ks", "iat", "ed", "in", "ae", "al", "um", "an"];
+const DEADLY_SUFFIXES = [
+  "cy",
+  "o",
+  "ax",
+  "x",
+  "ah",
+  "ux",
+  "ps",
+  "ny",
+  "is",
+  "ur",
+  "kh",
+  "eh",
+  "ih",
+  "ai",
+  "ia",
+  "au",
+  "sme",
+  "if",
+  "tif",
+  "ks",
+  "iat",
+  "ed",
+  "in",
+  "ae",
+  "al",
+  "um",
+  "an",
+];
 DEADLY_SUFFIXES.sort((a, b) => {
   if (a.length !== b.length) return a.length - b.length;
   return a.localeCompare(b);
@@ -407,7 +435,7 @@ prevBtn.addEventListener("click", () => {
   } else {
     currentPage--;
   }
-  
+
   updatePagination();
 });
 
@@ -420,18 +448,18 @@ nextBtn.addEventListener("click", () => {
   } else {
     currentPage++;
   }
-  
+
   updatePagination();
 });
 
 // ================= SUFFIX CHIPS (SKAKMAT) =================
 function renderSuffixChips(allSkakmatResults) {
-  let html = `<button class="suffix-chip ${currentActiveSuffix === 'ALL' ? 'active' : ''}" data-suf="ALL">SEMUA (${allSkakmatResults.length})</button>`;
+  let html = `<button class="suffix-chip ${currentActiveSuffix === "ALL" ? "active" : ""}" data-suf="ALL">SEMUA (${allSkakmatResults.length})</button>`;
 
-  DEADLY_SUFFIXES.forEach(suf => {
+  DEADLY_SUFFIXES.forEach((suf) => {
     // Hitung berapa kata yang berakhiran ini
-    const count = allSkakmatResults.filter(r => r.word.endsWith(suf)).length;
-    
+    const count = allSkakmatResults.filter((r) => r.word.endsWith(suf)).length;
+
     // Jika 0, tombol dibuat mati (disabled) agar rapi
     const isDisabled = count === 0 ? "disabled" : "";
     const isActive = currentActiveSuffix === suf ? "active" : "";
@@ -453,21 +481,21 @@ suffixFiltersDiv.addEventListener("click", (e) => {
 // ================= RENDER =================
 function renderResults() {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  
+
   list.innerHTML = currentResults
     .map((word, index) => {
       const used = usedWords.has(word) ? "used" : "";
-      
+
       // LOGIKA HIGHLIGHT AKHIRAN MEMATIKAN
       let displayWord = word;
-      
+
       // Cari apakah kata ini berakhiran salah satu dari DEADLY_SUFFIXES
-      const foundSuffix = DEADLY_SUFFIXES.find(suf => word.endsWith(suf));
-      
+      const foundSuffix = DEADLY_SUFFIXES.find((suf) => word.endsWith(suf));
+
       if (foundSuffix) {
         // Potong kata menjadi dua: bagian depan dan bagian akhiran
         const baseStr = word.slice(0, -foundSuffix.length);
-        
+
         // Gabungkan kembali dengan tag <span> untuk memberi warna
         displayWord = `${baseStr}<span class="deadly-highlight">${foundSuffix}</span>`;
       }
@@ -612,6 +640,36 @@ function updateCounter(total, unusedCount) {
     counter.classList.add("counter-red");
   }
 }
+
+// ================= CUSTOM RESIZE LOGIC =================
+const resizeHandle = document.getElementById("resize-handle");
+let isResizing = false;
+let startX, startY, startWidth, startHeight;
+
+resizeHandle.addEventListener("mousedown", (e) => {
+  isResizing = true;
+  // Gunakan screenX/Y agar tarikan dihitung berdasarkan layar monitor
+  startX = e.screenX;
+  startY = e.screenY;
+  startWidth = window.outerWidth;
+  startHeight = window.outerHeight;
+  e.preventDefault();
+});
+
+window.addEventListener("mousemove", (e) => {
+  if (!isResizing) return;
+
+  // Hitung selisih tarikan dari posisi awal di layar
+  const newWidth = startWidth + (e.screenX - startX);
+  const newHeight = startHeight + (e.screenY - startY);
+
+  // Kirim ukuran baru ke main.js secara real-time
+  ipcRenderer.send("resize-window", { width: newWidth, height: newHeight });
+});
+
+window.addEventListener("mouseup", () => {
+  isResizing = false;
+});
 
 // ================= BUTTONS =================
 // Tombol untuk menyembunyikan kata yang sudah dipakai (Unused Only)
