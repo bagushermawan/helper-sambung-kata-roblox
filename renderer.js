@@ -116,6 +116,9 @@ const clearBtn = document.getElementById("clearBtn");
 const resetUsedBtn = document.getElementById("resetUsedBtn");
 const modeBtn = document.getElementById("modeBtn");
 
+const normalSuffixContainer = document.getElementById("normalSuffixContainer");
+const normalSuffixInput = document.getElementById("normalSuffixInput");
+
 let hideUsed = false;
 let showUsedOnly = false;
 let currentResults = [];
@@ -144,7 +147,11 @@ let debounceTimer;
 
 input.addEventListener("input", () => {
   clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(performSearch, 80);
+  debounceTimer = setTimeout(performSearch, 300);
+});
+normalSuffixInput.addEventListener("input", () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(performSearch, 300);
 });
 
 function performSearch() {
@@ -157,6 +164,8 @@ function performSearch() {
     counter.innerText = "";
     pagination.style.display = "none";
     suffixFiltersDiv.style.display = "none"; // (Jika ada)
+    normalSuffixContainer.style.display =
+      currentMode === "normal" ? "flex" : "none";
     return;
   }
 
@@ -167,6 +176,7 @@ function performSearch() {
   // ================= SKAKMAT MODE =================
   if (currentMode === "skakmat") {
     const results = autoSkakmat(value, words);
+    normalSuffixContainer.style.display = "none";
 
     if (!results.length) {
       best.innerText = "❌ Tidak ada skakmat tersedia";
@@ -221,9 +231,19 @@ function performSearch() {
   }
 
   // ================= NORMAL  =================
-  suffixFiltersDiv.style.display = "none"; // Sembunyikan chip saat mode normal
-  const candidates = baseList.filter((w) => w.startsWith(value));
+  suffixFiltersDiv.style.display = "none";
+  normalSuffixContainer.style.display = "flex"; // 🟢 Munculkan input akhiran
 
+  // Ambil data prefix dasar
+  let candidates = baseList.filter((w) => w.startsWith(value));
+
+  // 🟢 FILTER MANUAL: Potong daftar kandidat jika ada input target akhiran
+  const customSuf = normalSuffixInput.value.toLowerCase().trim();
+  if (customSuf) {
+    candidates = candidates.filter((w) => w.endsWith(customSuf));
+  }
+
+  // (Sisa kode ke bawah seperti ranked, map, dll biarkan sama persis)
   const ranked = candidates.map((word) => {
     const prefixResults = {};
     let autoWin = false;
@@ -489,14 +509,17 @@ function renderResults() {
       // LOGIKA HIGHLIGHT AKHIRAN MEMATIKAN
       let displayWord = word;
 
-      // Cari apakah kata ini berakhiran salah satu dari DEADLY_SUFFIXES
-      const foundSuffix = DEADLY_SUFFIXES.find((suf) => word.endsWith(suf));
-
+      // Cek apakah di Mode Normal dan ada input manual
+      const customSufVal = normalSuffixInput.value.toLowerCase().trim();
+      if (currentMode === "normal" && customSufVal && word.endsWith(customSufVal)) {
+        foundSuffix = customSufVal;
+      } else {
+        // Kalau tidak, cari dari daftar akhiran mematikan bawaan
+        foundSuffix = DEADLY_SUFFIXES.find(suf => word.endsWith(suf));
+      }
+      
       if (foundSuffix) {
-        // Potong kata menjadi dua: bagian depan dan bagian akhiran
         const baseStr = word.slice(0, -foundSuffix.length);
-
-        // Gabungkan kembali dengan tag <span> untuk memberi warna
         displayWord = `${baseStr}<span class="deadly-highlight">${foundSuffix}</span>`;
       }
 
@@ -754,6 +777,7 @@ function clearAll() {
   pagination.style.display = "none";
   currentActiveSuffix = "ALL";
   suffixFiltersDiv.style.display = "none";
+  normalSuffixInput.value = "";
   input.focus();
 }
 
