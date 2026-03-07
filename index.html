@@ -368,7 +368,7 @@
         width: 18px; /* Dilebarkan sedikit agar garisnya lebih tegas */
         height: 18px;
         cursor: nwse-resize;
-        z-index: 10000;
+        z-index: 9999;
         -webkit-app-region: no-drag;
         border-bottom-right-radius: 6px;
         opacity: 0.6; /* Agak redup saat diam */
@@ -407,6 +407,26 @@
   </head>
 
   <body>
+    
+    <div id="login-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(15px); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: 'Segoe UI', sans-serif;">
+    
+    <div id="login-form" style="display: flex; flex-direction: column; align-items: center;">
+        <h2 style="margin-bottom: 20px; color: #ff4444; letter-spacing: 2px;">☠️ SKAKMAT ACCESS</h2>
+        <input type="text" id="license-key-input" placeholder="Masukkan License Key..." style="padding: 12px; width: 280px; border-radius: 8px; border: 1px solid #444; margin-bottom: 12px; background: #1a1a1a; color: white; text-align: center; outline: none;">
+        <button id="submit-key-btn" style="padding: 12px; background: #ff4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 280px; transition: 0.3s;">AKTIVASI</button>
+    </div>
+
+    <div id="welcome-back" style="display: none; flex-direction: column; align-items: center; text-align: center; background: rgba(255,255,255,0.05); padding: 30px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
+        <div style="font-size: 40px; margin-bottom: 10px;">👋</div>
+        <h3 style="margin: 0; color: #fff;">Selamat Datang Kembali!</h3>
+        <p id="display-saved-key" style="color: #888; font-size: 13px; margin: 10px 0 20px 0; font-family: monospace; background: #000; padding: 5px 10px; border-radius: 5px;"></p>
+        <button id="continue-btn" style="padding: 12px 30px; background: #00c853; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 200px; margin-bottom: 10px;">LANJUTKAN</button>
+        <a id="switch-key-btn" style="color: #ff4444; font-size: 12px; cursor: pointer; text-decoration: underline;">Ganti Key / Logout</a>
+    </div>
+
+    <p id="login-msg" style="margin-top: 20px; font-size: 13px; color: #ffbc00; font-weight: 500;"></p>
+</div>
+
     <div class="main-content">
       <div
         style="
