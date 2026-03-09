@@ -232,13 +232,15 @@ function startApp() {
   const counter = document.getElementById("counter");
   const toggleHideBtn = document.getElementById("toggleHideBtn");
   const toggleUsedOnlyBtn = document.getElementById("toggleUsedOnlyBtn");
+  const prefixInput = document.getElementById("prefix");
   const clearBtn = document.getElementById("clearBtn");
+  const normalSuffixInput = document.getElementById("normalSuffixInput");
+  const clearNormalSuffixBtn = document.getElementById("clearNormalSuffixBtn");
   const resetUsedBtn = document.getElementById("resetUsedBtn");
   const modeBtn = document.getElementById("modeBtn");
   const normalSuffixContainer = document.getElementById(
     "normalSuffixContainer",
   );
-  const normalSuffixInput = document.getElementById("normalSuffixInput");
 
   // Input tambah kata
   const newWordInput = document.getElementById("newWordInput");
@@ -817,14 +819,46 @@ function startApp() {
     performSearch();
   });
 
+  // 1. Sembunyikan tombol saat awal (Kondisi Kosong)
+  clearBtn.style.visibility = "hidden";
+  clearNormalSuffixBtn.style.visibility = "hidden";
+
+  // 2. Logika untuk Input Prefix
+  prefixInput.addEventListener("input", () => {
+    // Munculkan X hanya jika prefixInput ada isinya
+    clearBtn.style.visibility = prefixInput.value ? "visible" : "hidden";
+    performSearch(); // Jalankan pencarian otomatis saat mengetik
+  });
+
+  // 3. Logika untuk Input Suffix (Target Akhiran)
+  normalSuffixInput.addEventListener("input", () => {
+    // Munculkan X hanya jika normalSuffixInput ada isinya
+    clearNormalSuffixBtn.style.visibility = normalSuffixInput.value
+      ? "visible"
+      : "hidden";
+    performSearch(); // Jalankan pencarian otomatis saat mengetik
+  });
+
+  // 4. Fungsi Klik Tombol X - Prefix
   clearBtn.addEventListener("click", () => {
-    input.value = "";
+    prefixInput.value = "";
+    clearBtn.style.visibility = "hidden";
     best.innerHTML = "";
     best.style.display = "none";
     list.innerHTML = "";
     counter.innerText = "";
     pagination.style.display = "none";
-    input.focus();
+    prefixInput.focus();
+    performSearch();
+  });
+
+  // 5. Fungsi Klik Tombol X - Suffix
+  clearNormalSuffixBtn.addEventListener("click", () => {
+    normalSuffixInput.value = "";
+    clearNormalSuffixBtn.style.visibility = "hidden";
+
+    normalSuffixInput.focus();
+    performSearch();
   });
 
   resetUsedBtn.addEventListener("click", () => {
@@ -839,7 +873,7 @@ function startApp() {
 
   function clearAll() {
     counter.className = "";
-    input.value = "";
+    prefixInput.value = "";
     best.innerHTML = "";
     best.style.display = "none";
     list.innerHTML = "";
@@ -848,7 +882,9 @@ function startApp() {
     currentActiveSuffix = "ALL";
     suffixFiltersDiv.style.display = "none";
     normalSuffixInput.value = "";
-    input.focus();
+    clearBtn.style.visibility = "hidden";
+    clearNormalSuffixBtn.style.visibility = "hidden";
+    prefixInput.focus();
   }
 
   function saveUsedWords() {
