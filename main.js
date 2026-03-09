@@ -5,9 +5,9 @@ const fs = require("fs");
 require("electron-reload")(__dirname, {
   electron: require("path").join(__dirname, "node_modules", ".bin", "electron"),
   ignored: [
-    "usedWords.json", // Abaikan file usedwords.json
-    "words.json", // Abaikan file words.json
-    /\.git/, // Abaikan folder git
+    path.join(__dirname, "usedWords.json"), // Gunakan path.join agar lebih spesifik
+    path.join(__dirname, "words.json"),
+    path.join(__dirname, ".git"), // Abaikan folder git
   ],
 });
 
