@@ -8,7 +8,7 @@ const SUPABASE_URL = "https://lsnomevsllvjguotwchm.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1o9iZscYpzdpg7eEY3xwqQ_zvgsjdrX";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Ambil elemen login
+// ================= UI LOGIN =================
 const loginOverlay = document.getElementById("login-overlay");
 const loginForm = document.getElementById("login-form");
 const welcomeBack = document.getElementById("welcome-back");
@@ -30,36 +30,31 @@ if (savedKey) {
   displaySavedKey.innerText = `Key: ${savedKey}`;
 }
 
-// Tombol LANJUTKAN (Gunakan savedKey untuk validasi)
+// Tombol LANJUTKAN
 continueBtn.addEventListener("click", () => {
-  // Ambil ulang key-nya di sini agar fresh dan tidak undefined
   const currentSavedKey = localStorage.getItem("saved_key");
-
   if (currentSavedKey) {
     validateLicense(currentSavedKey);
   } else {
-    // Jika tiba-tiba kosong, balikkan ke form login
     welcomeBack.style.display = "none";
     loginForm.style.display = "flex";
   }
 });
 
-// Tombol GANTI KEY (Balikin ke tampilan input)
+// Tombol GANTI KEY
 switchKeyBtn.addEventListener("click", () => {
-  localStorage.removeItem("saved_key"); // Opsional: hapus kalau mau benar-benar reset
+  localStorage.removeItem("saved_key");
   welcomeBack.style.display = "none";
   loginForm.style.display = "flex";
   loginMsg.innerText = "";
 });
 
-// Ambil ID Unik Komputer saat ini
 const currentHWID = machineIdSync();
 
 async function validateLicense(userKey) {
   console.log("Memvalidasi Key:", userKey);
-  if (!userKey || userKey === "undefined") {
-    return;
-  }
+  if (!userKey || userKey === "undefined") return;
+
   loginMsg.innerText = "Mengecek lisensi & HWID...";
   loginBtn.disabled = true;
 
@@ -77,14 +72,13 @@ async function validateLicense(userKey) {
       return;
     }
     if (!data) {
-      loginMsg.innerText = "Silahkan masukkan key!";
+      loginMsg.innerText = "Silakan masukkan key!";
       loginBtn.disabled = false;
       return;
     }
 
     if (!data.hwid) {
       console.log("Mencoba mendaftarkan HWID:", currentHWID);
-      // PERBAIKAN DI SINI: tambahkan error: updateError
       const { error: updateError } = await supabase
         .from("license_keys")
         .update({ hwid: currentHWID })
@@ -113,7 +107,7 @@ async function validateLicense(userKey) {
       isLicenseValid = true;
       localStorage.setItem("saved_key", userKey);
       startApp(); // JALANKAN APLIKASI
-    }, 1500);
+    }, 1000);
   } catch (err) {
     console.error(err);
     loginMsg.innerText = "Kesalahan koneksi!";
@@ -121,17 +115,16 @@ async function validateLicense(userKey) {
   }
 }
 
-// Event saat tombol aktivasi diklik
 loginBtn.addEventListener("click", () => {
   const val = keyInput.value.trim();
   if (val) validateLicense(val);
 });
 
-// Tambahan: Tekan Enter untuk login
 keyInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") loginBtn.click();
 });
 
+// ================= FUNGSI UTAMA APLIKASI =================
 function startApp() {
   console.log("Aplikasi diaktifkan...");
   const wordsPath = path.join(__dirname, "words.json");
@@ -146,14 +139,11 @@ function startApp() {
 
   collapseBtn.addEventListener("click", () => {
     if (!isCollapsed) {
-      // Simpan tinggi asli sebelum ciut
       originalHeight = window.outerHeight;
-      // Ciutkan window (misal jadi tinggi 60px saja, sesuaikan dengan tinggi headermu)
       window.resizeTo(window.outerWidth, 10);
-      collapseBtn.innerText = "+"; // Ganti icon jadi plus
+      collapseBtn.innerText = "+";
       isCollapsed = true;
     } else {
-      // Kembalikan ke tinggi semula
       window.resizeTo(window.outerWidth, originalHeight);
       collapseBtn.innerText = "-";
       isCollapsed = false;
@@ -219,25 +209,23 @@ function startApp() {
 
   // ================= USED WORDS =================
   let usedWords = new Set();
-
   if (fs.existsSync(usedFilePath)) {
     usedWords = new Set(JSON.parse(fs.readFileSync(usedFilePath)));
   }
 
   // ================= DOM =================
-  // Tambahkan elemen baru
   const pagination = document.getElementById("pagination");
   const prevBtn = document.getElementById("prevBtn");
   const nextBtn = document.getElementById("nextBtn");
   const pageInfo = document.getElementById("pageInfo");
 
   const suffixFiltersDiv = document.getElementById("suffixFilters");
-  let currentActiveSuffix = "ALL"; // Menyimpan filter akhiran yang sedang dipilih
+  let currentActiveSuffix = "ALL";
 
-  // State pagination
   let currentPage = 1;
-  const ITEMS_PER_PAGE = 5; // Ubah jika ingin lebih dari 5 item per halaman
-  let allCurrentResults = []; // Menyimpan SEMUA hasil sebelum dipotong
+  const ITEMS_PER_PAGE = 5;
+  let allCurrentResults = [];
+
   const input = document.getElementById("prefix");
   const best = document.getElementById("best");
   const list = document.getElementById("list");
@@ -247,21 +235,23 @@ function startApp() {
   const clearBtn = document.getElementById("clearBtn");
   const resetUsedBtn = document.getElementById("resetUsedBtn");
   const modeBtn = document.getElementById("modeBtn");
-
   const normalSuffixContainer = document.getElementById(
     "normalSuffixContainer",
   );
   const normalSuffixInput = document.getElementById("normalSuffixInput");
+
+  // Input tambah kata
+  const newWordInput = document.getElementById("newWordInput");
+  const addWordBtn = document.getElementById("addWordBtn");
+  const addWordMsg = document.getElementById("addWordMsg");
 
   let hideUsed = false;
   let showUsedOnly = false;
   let currentResults = [];
 
   // ================= MODE =================
-  // Ambil mode terakhir dari storage, kalau belum ada default ke "normal"
   let currentMode = localStorage.getItem("savedMode") || "normal";
 
-  // JALANKAN INI SAAT STARTUP (Agar UI sesuai dengan mode yang tersimpan)
   function initMode() {
     modeBtn.classList.remove("skakmat-mode");
     if (currentMode === "skakmat") {
@@ -273,7 +263,6 @@ function startApp() {
     performSearch();
   }
 
-  // Panggil fungsinya
   initMode();
 
   // ================= SEARCH =================
@@ -292,23 +281,51 @@ function startApp() {
     if (!isLicenseValid) return;
     const value = input.value.toLowerCase().trim();
 
+    // Reset tampilan jika kosong
     if (!value) {
       best.innerHTML = "";
       best.style.display = "none";
       list.innerHTML = "";
       counter.innerText = "";
       pagination.style.display = "none";
-      suffixFiltersDiv.style.display = "none"; // (Jika ada)
+      suffixFiltersDiv.style.display = "none";
       normalSuffixContainer.style.display =
         currentMode === "normal" ? "flex" : "none";
       return;
     }
 
+    // ================= MODE 2: LENGKAPI KATA DETECTOR =================
+    if (value.includes("_")) {
+      normalSuffixContainer.style.display = "none";
+      suffixFiltersDiv.style.display = "none";
+
+      const results = cariLengkapiKata(value, words);
+
+      best.innerHTML = `🔍 <b>MODE LENGKAPI KATA</b><br><span style="color:#00d4ff">Mencari pola: ${value.toUpperCase()}</span>`;
+      best.style.display = "block";
+      best.style.color = "#00d4ff";
+
+      let filtered = results;
+      if (showUsedOnly) filtered = results.filter((w) => usedWords.has(w));
+      else if (hideUsed) filtered = results.filter((w) => !usedWords.has(w));
+
+      allCurrentResults = filtered;
+      currentPage = 1;
+      updatePagination();
+      updateCounter(
+        results.length,
+        results.filter((w) => !usedWords.has(w)).length,
+      );
+      return;
+    }
+
+    // ================= MODE 1: SAMBUNG KATA (NORMAL & SKAKMAT) =================
+    best.style.color = "#00e676";
     const inputLength = Math.min(value.length, MAX_PREFIX_LENGTH);
     const basePrefix = value.slice(0, inputLength);
     const baseList = prefixMap[inputLength][basePrefix] || [];
 
-    // ================= SKAKMAT MODE =================
+    // --- SUB-MODE: SKAKMAT ---
     if (currentMode === "skakmat") {
       const results = autoSkakmat(value, words);
       normalSuffixContainer.style.display = "none";
@@ -316,13 +333,10 @@ function startApp() {
       if (!results.length) {
         best.innerText = "❌ Tidak ada skakmat tersedia";
         list.innerHTML = "";
-        pagination.style.display = "none"; // Sembunyikan pagination
+        pagination.style.display = "none";
         return;
       }
 
-      // ================= SKAKMAT MODE UI & FILTERING =================
-
-      // 1. Terapkan Filter Hide/Only Used PERTAMA KALI ke seluruh hasil
       let baseFilteredResults = results;
       if (showUsedOnly) {
         baseFilteredResults = results.filter((r) => usedWords.has(r.word));
@@ -330,27 +344,20 @@ function startApp() {
         baseFilteredResults = results.filter((r) => !usedWords.has(r.word));
       }
 
-      // 2. Update Teks Info (Angka total yang sudah difilter)
       const OP_Count = baseFilteredResults.length;
       best.innerText = `♟ MODE SKAKMAT (${OP_Count} kandidat mematikan)`;
       best.style.display = "block";
 
-      // 3. Cek pengaman: Jika chip yang sedang aktif ternyata jumlahnya jadi 0
-      // karena filter Hide/Used ditekan, kembalikan ke "ALL" otomatis agar list tidak kosong
       if (currentActiveSuffix !== "ALL") {
         const activeCount = baseFilteredResults.filter((r) =>
           r.word.endsWith(currentActiveSuffix),
         ).length;
-        if (activeCount === 0) {
-          currentActiveSuffix = "ALL";
-        }
+        if (activeCount === 0) currentActiveSuffix = "ALL";
       }
 
-      // 4. Tampilkan & Render tombol chips dengan data yang akurat
       suffixFiltersDiv.style.display = "flex";
       renderSuffixChips(baseFilteredResults);
 
-      // 5. Filter terakhir berdasarkan Chip Suffix yang sedang aktif
       let finalResults = baseFilteredResults;
       if (currentActiveSuffix !== "ALL") {
         finalResults = baseFilteredResults.filter((r) =>
@@ -358,27 +365,23 @@ function startApp() {
         );
       }
 
-      // 6. Siapkan data untuk ditampilkan di List (Pagination)
       allCurrentResults = finalResults.map((r) => r.word);
       currentPage = 1;
       updatePagination();
       return;
     }
 
-    // ================= NORMAL  =================
+    // --- SUB-MODE: NORMAL ---
     suffixFiltersDiv.style.display = "none";
-    normalSuffixContainer.style.display = "flex"; // 🟢 Munculkan input akhiran
+    normalSuffixContainer.style.display = "flex";
 
-    // Ambil data prefix dasar
     let candidates = baseList.filter((w) => w.startsWith(value));
 
-    // 🟢 FILTER MANUAL: Potong daftar kandidat jika ada input target akhiran
     const customSuf = normalSuffixInput.value.toLowerCase().trim();
     if (customSuf) {
       candidates = candidates.filter((w) => w.endsWith(customSuf));
     }
 
-    // (Sisa kode ke bawah seperti ranked, map, dll biarkan sama persis)
     const ranked = candidates.map((word) => {
       const prefixResults = {};
       let autoWin = false;
@@ -386,25 +389,17 @@ function startApp() {
 
       for (let len = 1; len <= MAX_PREFIX_LENGTH; len++) {
         if (word.length < len) continue;
-
         const suf = word.slice(-len);
-
         const nextOptions =
           prefixMap[len][suf]?.filter((w) => w !== word && !usedWords.has(w))
             .length || 0;
 
         prefixResults[len] = nextOptions;
-
         if (nextOptions === 0) autoWin = true;
         if (nextOptions < minOptions) minOptions = nextOptions;
       }
 
-      return {
-        word,
-        prefixResults,
-        autoWin,
-        minOptions,
-      };
+      return { word, prefixResults, autoWin, minOptions };
     });
 
     ranked.sort((a, b) => {
@@ -417,30 +412,15 @@ function startApp() {
     const unused = resultWords.filter((w) => !usedWords.has(w));
     const used = resultWords.filter((w) => usedWords.has(w));
 
-    // Simpan SEMUA hasil ke allCurrentResults
-    // allCurrentResults = hideUsed ? unused : [...unused, ...used];
-    // currentPage = 1;
-    // ================= FILTER LOGIC =================
     if (showUsedOnly) {
-      allCurrentResults = used; // Hanya tampilkan yang sudah terpakai
+      allCurrentResults = used;
     } else if (hideUsed) {
-      allCurrentResults = unused; // Hanya tampilkan yang belum terpakai
+      allCurrentResults = unused;
     } else {
-      allCurrentResults = [...unused, ...used]; // Tampilkan semua
+      allCurrentResults = [...unused, ...used];
     }
 
     currentPage = 1;
-
-    if (ranked.length > 0) {
-      // ... (biarkan logika best message kamu tetap di sini) ...
-      best.style.display = "block"; // TAMBAHKAN INI
-    } else {
-      best.innerText = "❌ Tidak ditemukan";
-      best.style.display = "block"; // TAMBAHKAN INI
-    }
-
-    updateCounter(resultWords.length, unused.length);
-    updatePagination(); // Ganti renderResults() dengan updatePagination()
 
     if (ranked.length > 0) {
       const top = ranked[0];
@@ -455,27 +435,25 @@ function startApp() {
       for (let len = 3; len >= 1; len--) {
         if (top.prefixResults[len] !== undefined) {
           const count = top.prefixResults[len];
-
           let color = "#ffffff";
           if (count === 0) color = "#ff4444";
           else if (count <= 50) color = "#ffcc00";
 
-          message += `<span style="color:${color}">
-          prefix ${len} huruf → ${count} opsi
-        </span><br>`;
+          message += `<span style="color:${color}">prefix ${len} huruf → ${count} opsi</span><br>`;
         }
       }
-
       best.innerHTML = message;
+      best.style.display = "block";
     } else {
       best.innerText = "❌ Tidak ditemukan";
+      best.style.display = "block";
     }
 
     updateCounter(resultWords.length, unused.length);
-    renderResults();
+    updatePagination();
   }
 
-  // ================= SKAKMAT LOGIC =================
+  // ================= SKAKMAT & LENGKAPI LOGIC =================
   function getSuffixes(word) {
     const s = [];
     for (let i = MAX_PREFIX_LENGTH; i >= 1; i--) {
@@ -486,24 +464,16 @@ function startApp() {
 
   function countNextOptions(prefix, currentWord) {
     const len = prefix.length;
-
     const list = prefixMap[len][prefix] || [];
-
     return list.filter((w) => w !== currentWord && !usedWords.has(w)).length;
   }
 
-  // ================= SKAKMAT LOGIC =================
   function autoSkakmat(prefixAwal, wordList) {
-    // Ambil semua kata yang cocok dengan awalan (termasuk yang sudah dipakai)
     const candidates = wordList.filter((w) => w.startsWith(prefixAwal));
-
     const results = [];
 
     for (const word of candidates) {
-      // 1. Cek apakah kata memiliki akhiran mematikan dari daftar kita
       const hasDeadlySuffix = DEADLY_SUFFIXES.some((suf) => word.endsWith(suf));
-
-      // FILTER UTAMA: Jika tidak punya akhiran mematikan, lewati kata ini!
       if (!hasDeadlySuffix) continue;
 
       const suffixes = getSuffixes(word);
@@ -512,12 +482,10 @@ function startApp() {
 
       for (const suf of suffixes) {
         const nextCount = countNextOptions(suf, word);
-
         if (nextCount < minCount) {
           minCount = nextCount;
           bestSuffix = suf;
         }
-
         if (nextCount === 0) break;
       }
 
@@ -529,27 +497,45 @@ function startApp() {
       });
     }
 
-    // 2. Sorting / Pengurutan Kata (Kini semua kata di list adalah Deadly Suffix)
     results.sort((a, b) => {
-      // Cek status apakah kata sudah dipakai atau belum
       const aUsed = usedWords.has(a.word);
       const bUsed = usedWords.has(b.word);
 
-      // PRIORITAS 1: Utamakan kata yang BELUM terpakai ditaruh di atas!
       if (!aUsed && bUsed) return -1;
       if (aUsed && !bUsed) return 1;
-
-      // PRIORITAS 2: Kata yang opsi lanjutannya 0 (Auto Win)
       if (a.nextCount === 0 && b.nextCount !== 0) return -1;
       if (a.nextCount !== 0 && b.nextCount === 0) return 1;
-
-      // PRIORITAS 3: Sisanya urutkan berdasarkan opsi lanjutan musuh paling sedikit
       return a.nextCount - b.nextCount;
     });
 
     return results;
   }
-  // ================= PAGINATION LOGIC =================
+
+  function cariLengkapiKata(inputUser, daftarKata) {
+    if (!inputUser) return [];
+
+    let cleanInput = inputUser.toLowerCase().replace(/\s+/g, "");
+    let patternRaw = cleanInput.replace(/_+/g, ".+");
+
+    try {
+      let regexPattern = new RegExp("^" + patternRaw + "$");
+
+      let matches = daftarKata.filter((word) => {
+        return regexPattern.test(word.toLowerCase());
+      });
+
+      return matches.sort((a, b) => {
+        const aUsed = usedWords.has(a);
+        const bUsed = usedWords.has(b);
+        if (aUsed !== bUsed) return aUsed ? 1 : -1;
+        return a.length - b.length;
+      });
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // ================= PAGINATION & CHIPS LOGIC =================
   function updatePagination() {
     if (allCurrentResults.length === 0) {
       pagination.style.display = "none";
@@ -561,77 +547,55 @@ function startApp() {
     pagination.style.display = "flex";
     const totalPages = Math.ceil(allCurrentResults.length / ITEMS_PER_PAGE);
 
-    // Pastikan currentPage tidak melebihi batas
     if (currentPage > totalPages) currentPage = totalPages;
     if (currentPage < 1) currentPage = 1;
 
-    // Potong data berdasarkan halaman saat ini
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     const end = start + ITEMS_PER_PAGE;
     currentResults = allCurrentResults.slice(start, end);
 
-    // Update Teks & Tombol
     pageInfo.innerText = `Hal ${currentPage} / ${totalPages}`;
-    // prevBtn.disabled = currentPage === 1;
-    // nextBtn.disabled = currentPage === totalPages;
     prevBtn.disabled = false;
     nextBtn.disabled = false;
 
     renderResults();
   }
 
-  // ================= PAGINATION BUTTONS =================
   prevBtn.addEventListener("click", () => {
     const totalPages = Math.ceil(allCurrentResults.length / ITEMS_PER_PAGE);
-    if (totalPages === 0) return; // Mencegah error jika tidak ada data
-
-    if (currentPage === 1) {
-      currentPage = totalPages; // Jika di halaman 1, lompat ke halaman terakhir
-    } else {
-      currentPage--;
-    }
-
+    if (totalPages === 0) return;
+    if (currentPage === 1) currentPage = totalPages;
+    else currentPage--;
     updatePagination();
   });
 
   nextBtn.addEventListener("click", () => {
     const totalPages = Math.ceil(allCurrentResults.length / ITEMS_PER_PAGE);
     if (totalPages === 0) return;
-
-    if (currentPage === totalPages) {
-      currentPage = 1; // Jika di halaman terakhir, kembali ke halaman 1
-    } else {
-      currentPage++;
-    }
-
+    if (currentPage === totalPages) currentPage = 1;
+    else currentPage++;
     updatePagination();
   });
 
-  // ================= SUFFIX CHIPS (SKAKMAT) =================
   function renderSuffixChips(allSkakmatResults) {
     let html = `<button class="suffix-chip ${currentActiveSuffix === "ALL" ? "active" : ""}" data-suf="ALL">SEMUA (${allSkakmatResults.length})</button>`;
 
     DEADLY_SUFFIXES.forEach((suf) => {
-      // Hitung berapa kata yang berakhiran ini
       const count = allSkakmatResults.filter((r) =>
         r.word.endsWith(suf),
       ).length;
-
-      // Jika 0, tombol dibuat mati (disabled) agar rapi
       const isDisabled = count === 0 ? "disabled" : "";
       const isActive = currentActiveSuffix === suf ? "active" : "";
-
       html += `<button class="suffix-chip ${isActive}" data-suf="${suf}" ${isDisabled}>• ${suf.toUpperCase()} (${count})</button>`;
     });
 
     suffixFiltersDiv.innerHTML = html;
   }
 
-  // Event listener saat chip diklik
   suffixFiltersDiv.addEventListener("click", (e) => {
     if (e.target.classList.contains("suffix-chip") && !e.target.disabled) {
       currentActiveSuffix = e.target.dataset.suf;
-      performSearch(); // Refresh pencarian
+      performSearch();
     }
   });
 
@@ -642,35 +606,46 @@ function startApp() {
     list.innerHTML = currentResults
       .map((word, index) => {
         const used = usedWords.has(word) ? "used" : "";
-
-        // LOGIKA HIGHLIGHT AKHIRAN MEMATIKAN
         let displayWord = word;
 
-        // Cek apakah di Mode Normal dan ada input manual
-        const customSufVal = normalSuffixInput.value.toLowerCase().trim();
-        let foundSuffix = null;
-        if (
-          currentMode === "normal" &&
-          customSufVal &&
-          word.endsWith(customSufVal)
-        ) {
-          foundSuffix = customSufVal;
-        } else {
-          // Kalau tidak, cari dari daftar akhiran mematikan bawaan
-          foundSuffix = DEADLY_SUFFIXES.find((suf) => word.endsWith(suf));
-        }
+        const isLengkapiKata = input.value.includes("_");
 
-        if (foundSuffix) {
-          const baseStr = word.slice(0, -foundSuffix.length);
-          displayWord = `${baseStr}<span class="deadly-highlight">${foundSuffix}</span>`;
+        if (isLengkapiKata) {
+          // HIGHLIGHT LENGKAPI KATA (Warnai huruf aslinya)
+          let letters = input.value.replace(/_/g, "").toLowerCase().split("");
+          displayWord = word
+            .split("")
+            .map((char) =>
+              letters.includes(char)
+                ? `<span class="deadly-highlight">${char}</span>`
+                : char,
+            )
+            .join("");
+        } else {
+          // HIGHLIGHT SAMBUNG KATA BISA (Akhiran)
+          const customSufVal = normalSuffixInput.value.toLowerCase().trim();
+          let foundSuffix = null;
+
+          if (
+            currentMode === "normal" &&
+            customSufVal &&
+            word.endsWith(customSufVal)
+          ) {
+            foundSuffix = customSufVal;
+          } else {
+            foundSuffix = DEADLY_SUFFIXES.find((suf) => word.endsWith(suf));
+          }
+
+          if (foundSuffix) {
+            const baseStr = word.slice(0, -foundSuffix.length);
+            displayWord = `${baseStr}<span class="deadly-highlight">${foundSuffix}</span>`;
+          }
         }
 
         return `
-        <div class="item ${used}" data-word="${word}" 
-             style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="item ${used}" data-word="${word}" style="display:flex;justify-content:space-between;align-items:center;">
           <span>${startIndex + index + 1}. ${displayWord}</span>
-          <button class="delete-btn" data-word="${word}" 
-            style="background:none;border:none;color:#ff4444;cursor:pointer;">
+          <button class="delete-btn" data-word="${word}" style="background:none;border:none;color:#ff4444;cursor:pointer;">
             🗑
           </button>
         </div>
@@ -679,22 +654,18 @@ function startApp() {
       .join("");
   }
 
-  // ================= LIST CLICK =================
+  // ================= INTERAKSI DOM LAINNYA =================
   list.addEventListener("click", (e) => {
     if (e.target.classList.contains("delete-btn")) {
       deleteWord(e.target.dataset.word);
       return;
     }
-
     const item = e.target.closest(".item");
     if (!item) return;
-
     toggleUsed(item.dataset.word);
   });
 
-  // ================= ADD WORD =================
   addWordBtn.addEventListener("click", addNewWord);
-
   newWordInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") addNewWord();
   });
@@ -707,10 +678,9 @@ function startApp() {
     if (!/^[a-z]+$/.test(newWord))
       return showMsg("Hanya huruf a-z tanpa spasi", "error");
 
-    // Jika kata sudah ada
     if (words.includes(newWord)) {
-      newWordInput.value = ""; // <--- Tambahkan ini agar input langsung bersih
-      newWordInput.focus(); // <--- Opsional: Pastikan kursor tetap aktif di sana
+      newWordInput.value = "";
+      newWordInput.focus();
       return showMsg("Kata sudah tersedia", "error");
     }
 
@@ -719,19 +689,13 @@ function startApp() {
     for (let len = 1; len <= MAX_PREFIX_LENGTH; len++) {
       if (newWord.length >= len) {
         const prefix = newWord.slice(0, len);
-
-        if (!prefixMap[len][prefix]) {
-          prefixMap[len][prefix] = [];
-        }
-
+        if (!prefixMap[len][prefix]) prefixMap[len][prefix] = [];
         prefixMap[len][prefix].push(newWord);
       }
     }
 
     fs.writeFileSync(wordsPath, JSON.stringify(words, null, 2));
-
     showMsg("Kata berhasil ditambahkan", "success");
-
     newWordInput.value = "";
     performSearch();
   }
@@ -739,26 +703,20 @@ function startApp() {
   function showMsg(text, type) {
     addWordMsg.innerText = text;
     addWordMsg.classList.add(type);
-
     setTimeout(() => {
       addWordMsg.innerText = "";
       addWordMsg.classList.remove("success", "error");
     }, 2000);
   }
 
-  // ================= TOGGLE USED =================
   function toggleUsed(word) {
-    if (usedWords.has(word)) {
-      usedWords.delete(word);
-    } else {
-      usedWords.add(word);
-    }
+    if (usedWords.has(word)) usedWords.delete(word);
+    else usedWords.add(word);
 
     saveUsedWords();
     performSearch();
   }
 
-  // ================= DELETE WORD =================
   function deleteWord(word) {
     const index = words.indexOf(word);
     if (index !== -1) words.splice(index, 1);
@@ -768,7 +726,6 @@ function startApp() {
     for (let len = 1; len <= MAX_PREFIX_LENGTH; len++) {
       if (word.length >= len) {
         const prefix = word.slice(0, len);
-
         if (prefixMap[len][prefix]) {
           prefixMap[len][prefix] = prefixMap[len][prefix].filter(
             (w) => w !== word,
@@ -779,41 +736,31 @@ function startApp() {
 
     fs.writeFileSync(wordsPath, JSON.stringify(words, null, 2));
     saveUsedWords();
-
     performSearch();
   }
 
-  // ================= COUNTER =================
   function updateCounter(total, unusedCount) {
     if (total === 0) {
       counter.innerText = "";
       counter.className = "";
       return;
     }
-
     const ratio = unusedCount / total;
-
     counter.innerText = `Unused left: ${unusedCount} / ${total}`;
-
     counter.classList.remove("counter-green", "counter-yellow", "counter-red");
 
-    if (ratio > 0.6) {
-      counter.classList.add("counter-green");
-    } else if (ratio > 0.3) {
-      counter.classList.add("counter-yellow");
-    } else {
-      counter.classList.add("counter-red");
-    }
+    if (ratio > 0.6) counter.classList.add("counter-green");
+    else if (ratio > 0.3) counter.classList.add("counter-yellow");
+    else counter.classList.add("counter-red");
   }
 
-  // ================= CUSTOM RESIZE LOGIC =================
+  // ================= CUSTOM RESIZE =================
   const resizeHandle = document.getElementById("resize-handle");
   let isResizing = false;
   let startX, startY, startWidth, startHeight;
 
   resizeHandle.addEventListener("mousedown", (e) => {
     isResizing = true;
-    // Gunakan screenX/Y agar tarikan dihitung berdasarkan layar monitor
     startX = e.screenX;
     startY = e.screenY;
     startWidth = window.outerWidth;
@@ -823,12 +770,8 @@ function startApp() {
 
   window.addEventListener("mousemove", (e) => {
     if (!isResizing) return;
-
-    // Hitung selisih tarikan dari posisi awal di layar
     const newWidth = startWidth + (e.screenX - startX);
     const newHeight = startHeight + (e.screenY - startY);
-
-    // Kirim ukuran baru ke main.js secara real-time
     ipcRenderer.send("resize-window", { width: newWidth, height: newHeight });
   });
 
@@ -836,33 +779,23 @@ function startApp() {
     isResizing = false;
   });
 
-  // ================= BUTTONS =================
-  // Tombol untuk menyembunyikan kata yang sudah dipakai (Unused Only)
+  // ================= BUTTONS & SETTINGS =================
   toggleHideBtn.addEventListener("click", () => {
     hideUsed = !hideUsed;
-
-    // Jika Hide nyala, pastikan Only Used mati
     if (hideUsed) {
       showUsedOnly = false;
       toggleUsedOnlyBtn.innerText = "♻️ Used: OFF";
     }
-
-    // Teks dan emoji berubah secara dinamis
     toggleHideBtn.innerText = hideUsed ? "🙈 Hide: ON" : "👁️ Hide: OFF";
     performSearch();
   });
 
-  // Tombol baru untuk HANYA menampilkan kata yang sudah dipakai
   toggleUsedOnlyBtn.addEventListener("click", () => {
     showUsedOnly = !showUsedOnly;
-
-    // Jika Only Used nyala, pastikan Hide mati
     if (showUsedOnly) {
       hideUsed = false;
       toggleHideBtn.innerText = "👁️ Hide: OFF";
     }
-
-    // Teks dan emoji berubah secara dinamis
     toggleUsedOnlyBtn.innerText = showUsedOnly ? "🎯 Used: ON" : "♻️ Used: OFF";
     performSearch();
   });
@@ -872,21 +805,16 @@ function startApp() {
     const index = modes.indexOf(currentMode);
     currentMode = modes[(index + 1) % modes.length];
 
-    // SIMPAN MODE KE LOCALSTORAGE
     localStorage.setItem("savedMode", currentMode);
-
-    // Reset class styling
     modeBtn.classList.remove("skakmat-mode");
 
-    // Update teks tombol & tambahkan styling khusus jika skakmat
     if (currentMode === "skakmat") {
       modeBtn.classList.add("skakmat-mode");
       modeBtn.innerText = "☠️ SKAKMAT";
     } else {
       modeBtn.innerText = "🟢 NORMAL";
     }
-
-    performSearch(); // Refresh list otomatis saat mode diganti
+    performSearch();
   });
 
   clearBtn.addEventListener("click", () => {
@@ -895,7 +823,7 @@ function startApp() {
     best.style.display = "none";
     list.innerHTML = "";
     counter.innerText = "";
-    pagination.style.display = "none"; // Tambahkan ini
+    pagination.style.display = "none";
     input.focus();
   });
 
@@ -931,6 +859,3 @@ function startApp() {
     ipcRenderer.send("close-app");
   });
 }
-
-// 4. Eksekusi pertama kali
-validateLicense();
