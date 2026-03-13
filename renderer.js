@@ -18,6 +18,8 @@ const switchKeyBtn = document.getElementById("switch-key-btn");
 const keyInput = document.getElementById("license-key-input");
 const loginBtn = document.getElementById("submit-key-btn");
 const loginMsg = document.getElementById("login-msg");
+const sortBtn = document.getElementById("sortBtn");
+let currentSort = localStorage.getItem("savedSort") || "default";
 
 // Cek otomatis saat buka aplikasi (Auto-login)
 const savedKey = localStorage.getItem("saved_key");
@@ -312,6 +314,7 @@ function startApp() {
       else if (hideUsed) filtered = results.filter((w) => !usedWords.has(w));
 
       allCurrentResults = filtered;
+      applySorting(); //buat sorting
       currentPage = 1;
       updatePagination();
       updateCounter(
@@ -368,6 +371,7 @@ function startApp() {
       }
 
       allCurrentResults = finalResults.map((r) => r.word);
+      applySorting(); //buat sorting
       currentPage = 1;
       updatePagination();
       return;
@@ -422,6 +426,7 @@ function startApp() {
       allCurrentResults = [...unused, ...used];
     }
 
+    applySorting(); //buat sorting
     currentPage = 1;
 
     if (ranked.length > 0) {
@@ -671,6 +676,45 @@ function startApp() {
   newWordInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") addNewWord();
   });
+
+  // Fungsi untuk update teks tombol Sort
+  function updateSortBtnText() {
+    if (currentSort === "shortest") {
+      sortBtn.innerText = "⬇️ Sort: Short";
+    } else if (currentSort === "longest") {
+      sortBtn.innerText = "⬆️ Sort: Long";
+    } else {
+      sortBtn.innerText = "↕️ Sort: Default";
+    }
+  }
+  updateSortBtnText();
+
+  // Event Listener saat tombol Sort diklik
+  sortBtn.addEventListener("click", () => {
+    const sorts = ["default", "shortest", "longest"];
+    const index = sorts.indexOf(currentSort);
+    currentSort = sorts[(index + 1) % sorts.length];
+
+    localStorage.setItem("savedSort", currentSort);
+    updateSortBtnText();
+    performSearch(); // Langsung perbarui daftar kata!
+  });
+
+  // Helper Fungsi untuk melakukan Sorting
+  function applySorting() {
+    if (currentSort === "shortest") {
+      // Urutkan dari yang hurufnya paling sedikit
+      allCurrentResults.sort(
+        (a, b) => a.length - b.length || a.localeCompare(b),
+      );
+    } else if (currentSort === "longest") {
+      // Urutkan dari yang hurufnya paling banyak
+      allCurrentResults.sort(
+        (a, b) => b.length - a.length || a.localeCompare(b),
+      );
+    }
+    // Jika "default", kita biarkan urutannya apa adanya (karena bawaan mesin itu urutan strategis terbaik / Auto-Win)
+  }
 
   function addNewWord() {
     const newWord = newWordInput.value.toLowerCase().trim();

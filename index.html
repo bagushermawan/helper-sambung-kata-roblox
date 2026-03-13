@@ -444,6 +444,18 @@
         color: rgba(255, 255, 255, 0.89);
         box-shadow: 0 0 8px #00e676;
 
+      }  
+      /* Tombol Sort (Oranye Menyala) */
+      #sortBtn {
+        border-color: rgba(255, 165, 0, 0.2);
+        color: rgba(255, 165, 0, 0.7);
+      }
+      #sortBtn:hover {
+        border-color: #ffa500;
+        color: #fff;
+        background: rgba(255, 165, 0, 0.15);
+        text-shadow: 0 0 5px #ffa500, 0 0 10px #ffa500;
+        box-shadow: 0 0 8px rgba(255, 165, 0, 0.6), inset 0 0 4px rgba(255, 165, 0, 0.3);
       }
     </style>
   </head>
@@ -535,9 +547,10 @@
 <hr style="margin: 10px 0; opacity: 0.3" />
 <div style="display: flex; gap: 5px; margin: 5px 0">
   <button id="modeBtn">🟢 NORMAL</button>
+  <button id="sortBtn">↕️ Sort: Def</button>
   <button id="toggleHideBtn">👁️ Hide: OFF</button>
   <button id="toggleUsedOnlyBtn">♻️ Used: OFF</button>
-  <button onclick="switchEngine()">🚀 Engine</button>
+  <button onclick="switchEngine()" hidden>🚀 Engine</button>
   <button id="resetUsedBtn" hidden>🗑️ Reset</button>
 </div>
 
