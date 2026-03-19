@@ -149,8 +149,24 @@
         box-shadow:
           0 0 8px rgba(188, 19, 254, 0.6),
           inset 0 0 4px rgba(188, 19, 254, 0.3);
-      }
-
+        }
+        button.normal-mode:hover {
+          border-color: #2ecc71;
+          color: #fff;
+          background: rgba(46, 204, 113, 0.15); /* Latar belakang hijau tipis */
+          
+          /* Efek Glow Ganda: Teks dan Kotak */
+          text-shadow: 
+            0 0 5px rgba(46, 204, 113, 1),
+            0 0 10px rgba(46, 204, 113, 0.8);
+          box-shadow: 
+            0 0 8px rgba(46, 204, 113, 0.6),
+            inset 0 0 4px rgba(46, 204, 113, 0.3);
+          
+          cursor: pointer;
+          transition: all 0.3s ease;
+  }
+      
       /* Tombol Hide (Hijau Menyala) */
       #toggleHideBtn {
         border-color: rgba(0, 255, 102, 0.2);
@@ -457,6 +473,46 @@
         text-shadow: 0 0 5px #ffa500, 0 0 10px #ffa500;
         box-shadow: 0 0 8px rgba(255, 165, 0, 0.6), inset 0 0 4px rgba(255, 165, 0, 0.3);
       }
+
+      /* Toast Notification Style */
+      .toast {
+        visibility: hidden;
+        min-width: 250px;
+        background-color: rgba(18, 4, 31, 0.9); /* Ungu transparan */
+        border-color: #7b2cbf;
+        color: #fff;
+        text-align: center;
+        border-radius: 8px;
+        padding: 12px;
+        position: fixed;
+        z-index: 9999;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%); /* Posisi persis di tengah bawah */
+        font-size: 14px;
+        font-weight: bold;
+        box-shadow: 0 0 10px rgba(123, 44, 191, 0.8), 0 0 20px rgba(123, 44, 191, 0.5);
+        opacity: 0;
+        transition: opacity 0.3s, bottom 0.3s;
+      }
+      
+      /* Class saat Toast muncul */
+      .toast.show {
+        visibility: visible;
+        opacity: 1;
+        bottom: 300px; /* Efek melayang naik sedikit */
+      }
+
+      #modeBtn:hover {
+        filter: brightness(1.2); /* Membuat tombol sedikit lebih terang saat disentuh */
+        transform: translateY(-1px); /* Efek sedikit terangkat */
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      
+      #modeBtn:active {
+        transform: translateY(1px); /* Efek membal saat diklik */
+      }
     </style>
   </head>
 
@@ -550,6 +606,9 @@
   <button id="sortBtn">↕️ Sort: Def</button>
   <button id="toggleHideBtn">👁️ Hide: OFF</button>
   <button id="toggleUsedOnlyBtn">♻️ Used: OFF</button>
+  <label style="color: white; margin-left: 10px; cursor: pointer;">
+  <input type="checkbox" id="autoEnterCheck" checked> Auto Enter
+</label>
   <button onclick="switchEngine()" hidden>🚀 Engine</button>
   <button id="resetUsedBtn" hidden>🗑️ Reset</button>
 </div>
@@ -629,6 +688,7 @@
       // Jalankan setiap kali user menarik (resize) ujung window
       window.addEventListener("resize", applyAutoScale);
     </script>
-    </div> 
+    </div>
+    <div id="toast-notification" class="toast">Notifikasi</div>
   </body>
 </html>
