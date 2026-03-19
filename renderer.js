@@ -3,6 +3,7 @@ const path = require("path");
 const { ipcRenderer } = require("electron");
 const { createClient } = require("@supabase/supabase-js");
 const { machineIdSync } = require("node-machine-id");
+const { exec } = require("child_process");
 
 const SUPABASE_URL = "https://lsnomevsllvjguotwchm.supabase.co";
 const SUPABASE_KEY = "sb_publishable_1o9iZscYpzdpg7eEY3xwqQ_zvgsjdrX";
@@ -128,6 +129,98 @@ keyInput.addEventListener("keydown", (e) => {
 
 // ================= FUNGSI UTAMA APLIKASI =================
 function startApp() {
+  // Fungsi eksekusi ngetik lewat PowerShell
+  function triggerAutoType(word) {
+    // ================= FITUR BARU: GUNTING PREFIX =================
+    // 1. Ambil teks yang ada di kotak pencarian (prefix)
+    const prefixInput = document.getElementById("prefix");
+    const prefixText = prefixInput
+      ? prefixInput.value.trim().toLowerCase()
+      : "";
+
+    // 2. Siapkan variabel kata yang akan diketik
+    let wordToType = word;
+
+    // 3. Cek apakah kata target benar-benar diawali oleh prefix tersebut
+    if (prefixText && word.toLowerCase().startsWith(prefixText)) {
+      // Gunting bagian depan kata sepanjang jumlah huruf prefix-nya
+      wordToType = word.substring(prefixText.length);
+    }
+    // ==============================================================
+
+    // Cek mode Auto Enter
+    const isAutoEnter = document.getElementById("autoEnterCheck")?.checked;
+    const modeText = isAutoEnter ? "Ketik+Enter" : "Ketik Saja";
+
+    // Tampilkan di Toast kata yang SUDAH DIPOTONG
+    showToast(`⏳ 1.5s: Siap ${modeText} "${wordToType}"...`);
+
+    setTimeout(() => {
+      // SCRIPT RAHASIA (PowerShell Level Dewa)
+      let psScript = `
+      $code = @"
+      using System;
+      using System.Runtime.InteropServices;
+      public class Kbd {
+          [DllImport("user32.dll")]
+          public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+          [DllImport("user32.dll")]
+          public static extern byte MapVirtualKey(uint uCode, uint uMapType);
+      }
+"@;
+      Add-Type -TypeDefinition $code;
+      
+      # ==== PENTING: Gunakan wordToType di sini, bukan word ====
+      $word = '${wordToType}';
+      
+      foreach ($char in $word.ToCharArray()) {
+          $vk = [byte][char]$char.ToString().ToUpper()[0];
+          $scan = [Kbd]::MapVirtualKey($vk, 0);
+          
+          # 1. Tekan Tombol
+          [Kbd]::keybd_event($vk, $scan, 0, [UIntPtr]::Zero);
+          
+          # Jeda ATAS (Tahan tombol): 20ms - 45ms 
+          # (Pas untuk simulasi tekanan mekanik keyboard)
+          Start-Sleep -Milliseconds (Get-Random -Minimum 20 -Maximum 45);
+          
+          # 2. Lepas Tombol
+          [Kbd]::keybd_event($vk, $scan, 2, [UIntPtr]::Zero);
+          
+          # Jeda BAWAH (Pindah huruf): 25ms - 55ms 
+          # (Sangat cepat, tapi acaknya bikin anti-cheat bingung)
+          Start-Sleep -Milliseconds (Get-Random -Minimum 25 -Maximum 55);
+      }
+    `;
+
+      // Tambahkan tombol Enter jika dicentang
+      if (isAutoEnter) {
+        psScript += `
+        Start-Sleep -Milliseconds (Get-Random -Minimum 80 -Maximum 120);
+        $enterScan = [Kbd]::MapVirtualKey(13, 0);
+        [Kbd]::keybd_event(13, $enterScan, 0, [UIntPtr]::Zero);
+        Start-Sleep -Milliseconds 40;
+        [Kbd]::keybd_event(13, $enterScan, 2, [UIntPtr]::Zero);
+      `;
+      }
+
+      // ENCODE SCRIPT
+      const base64Script = Buffer.from(psScript, "utf16le").toString("base64");
+
+      exec(
+        `powershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${base64Script}`,
+        (error) => {
+          if (error) {
+            console.error("Gagal Auto-Type:", error);
+            showToast(`❌ Gagal mengetik: ${wordToType}`);
+          } else {
+            showToast(`✅ Berhasil: ${wordToType}`);
+          }
+        },
+      );
+    }, 800);
+  }
+
   console.log("Aplikasi diaktifkan...");
   const wordsPath = path.join(__dirname, "words.json");
   const usedFilePath = path.join(__dirname, "usedWords.json");
@@ -155,15 +248,17 @@ function startApp() {
   // ================= TARGET AKHIRAN (HEURISTIC) =================
   const DEADLY_SUFFIXES = [
     "cy",
-    "o",
+    "ao",
+    "ts",
+    "ei",
+    "ie",
+    "rp",
     "ax",
     "x",
     "ah",
-    "ux",
+    "rb",
     "ps",
     "ny",
-    "is",
-    "ur",
     "kh",
     "eh",
     "ih",
@@ -175,12 +270,7 @@ function startApp() {
     "tif",
     "ks",
     "iat",
-    "ed",
-    "in",
     "ae",
-    "al",
-    "um",
-    "an",
   ];
   DEADLY_SUFFIXES.sort((a, b) => {
     if (a.length !== b.length) return a.length - b.length;
@@ -244,6 +334,20 @@ function startApp() {
     "normalSuffixContainer",
   );
 
+  // Fungsi untuk memunculkan Toast Notification
+  function showToast(message) {
+    const toast = document.getElementById("toast-notification");
+    if (!toast) return;
+
+    toast.innerText = message;
+    toast.classList.add("show");
+
+    // Hilangkan otomatis setelah 2.5 detik
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 2500);
+  }
+
   // Input tambah kata
   const newWordInput = document.getElementById("newWordInput");
   const addWordBtn = document.getElementById("addWordBtn");
@@ -259,10 +363,13 @@ function startApp() {
   function initMode() {
     modeBtn.classList.remove("skakmat-mode");
     if (currentMode === "skakmat") {
+      modeBtn.classList.remove("normal-mode");
       modeBtn.classList.add("skakmat-mode");
       modeBtn.innerText = "☠️ SKAKMAT";
     } else {
       modeBtn.innerText = "🟢 NORMAL";
+      modeBtn.classList.remove("skakmat-mode");
+      modeBtn.classList.add("normal-mode");
     }
     performSearch();
   }
@@ -608,57 +715,98 @@ function startApp() {
 
   // ================= RENDER =================
   function renderResults() {
+    list.innerHTML = ""; // Kosongkan daftar sebelumnya
+
+    // Hitung angka urut awal berdasarkan halaman saat ini
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
 
-    list.innerHTML = currentResults
-      .map((word, index) => {
-        const used = usedWords.has(word) ? "used" : "";
-        let displayWord = word;
+    // ==== INI YANG TADI HILANG: BUKA LOOPING ====
+    currentResults.forEach((word, index) => {
+      // 1. Setup LI agar dikenali oleh closest(".item")
+      const li = document.createElement("li");
+      li.classList.add("item"); // WAJIB
+      li.dataset.word = word; // WAJIB
+      li.style.display = "flex";
+      li.style.justifyContent = "space-between";
+      li.style.alignItems = "center";
+      li.style.padding = "6px 10px";
+      li.style.borderBottom = "1px solid #333";
 
-        const isLengkapiKata = input.value.includes("_");
+      // Cek status terpakai
+      const isUsed = usedWords.has(word);
 
-        if (isLengkapiKata) {
-          // HIGHLIGHT LENGKAPI KATA (Warnai huruf aslinya)
-          let letters = input.value.replace(/_/g, "").toLowerCase().split("");
-          displayWord = word
-            .split("")
-            .map((char) =>
-              letters.includes(char)
-                ? `<span class="deadly-highlight">${char}</span>`
-                : char,
-            )
-            .join("");
-        } else {
-          // HIGHLIGHT SAMBUNG KATA BISA (Akhiran)
-          const customSufVal = normalSuffixInput.value.toLowerCase().trim();
-          let foundSuffix = null;
+      // ==========================================
+      // BAGIAN KIRI: NOMOR & TEKS
+      // ==========================================
+      const leftDiv = document.createElement("div");
+      leftDiv.style.display = "flex";
+      leftDiv.style.alignItems = "center";
+      leftDiv.style.flex = "1";
+      leftDiv.style.cursor = "pointer";
 
-          if (
-            currentMode === "normal" &&
-            customSufVal &&
-            word.endsWith(customSufVal)
-          ) {
-            foundSuffix = customSufVal;
-          } else {
-            foundSuffix = DEADLY_SUFFIXES.find((suf) => word.endsWith(suf));
-          }
+      const numSpan = document.createElement("span");
+      numSpan.innerText = `${startIndex + index + 1}.`;
+      numSpan.style.marginRight = "10px";
+      numSpan.style.color = "#7b2cbf";
+      numSpan.style.fontWeight = "bold";
+      numSpan.style.minWidth = "25px";
 
-          if (foundSuffix) {
-            const baseStr = word.slice(0, -foundSuffix.length);
-            displayWord = `${baseStr}<span class="deadly-highlight">${foundSuffix}</span>`;
-          }
-        }
+      const wordText = document.createElement("span");
+      wordText.innerText = word;
+      if (isUsed) {
+        wordText.style.textDecoration = "line-through";
+        wordText.style.color = "#888";
+      }
 
-        return `
-        <div class="item ${used}" data-word="${word}" style="display:flex;justify-content:space-between;align-items:center;">
-          <span>${startIndex + index + 1}. ${displayWord}</span>
-          <button class="delete-btn" data-word="${word}" style="background:none;border:none;color:#ff4444;cursor:pointer;">
-            🗑
-          </button>
-        </div>
-      `;
-      })
-      .join("");
+      leftDiv.appendChild(numSpan);
+      leftDiv.appendChild(wordText);
+
+      // ==========================================
+      // BAGIAN KANAN: TOMBOL NGETIK & DELETE
+      // ==========================================
+      const rightDiv = document.createElement("div");
+      rightDiv.style.display = "flex";
+      rightDiv.style.gap = "10px";
+
+      // Tombol Ngetik ⌨️
+
+      const typeBtn = document.createElement("button");
+      typeBtn.innerText = "⌨️";
+      typeBtn.style.background = "none";
+      typeBtn.style.border = "none";
+      typeBtn.style.cursor = "pointer";
+      typeBtn.style.fontSize = "16px";
+
+      if (isUsed) {
+        typeBtn.style.opacity = "0.5";
+      }
+
+      typeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        triggerAutoType(word);
+      });
+
+      rightDiv.appendChild(typeBtn);
+
+      // Tombol Delete 🗑️
+      const delBtn = document.createElement("button");
+      delBtn.innerText = "🗑️";
+      delBtn.classList.add("delete-btn");
+      delBtn.dataset.word = word;
+      delBtn.style.background = "none";
+      delBtn.style.border = "none";
+      delBtn.style.cursor = "pointer";
+      delBtn.style.fontSize = "16px";
+
+      rightDiv.appendChild(delBtn);
+
+      // Gabungkan semua ke LI
+      li.appendChild(leftDiv);
+      li.appendChild(rightDiv);
+
+      // Masukkan LI ke dalam List
+      list.appendChild(li);
+    }); // ==== INI YANG TADI HILANG: TUTUP LOOPING ====
   }
 
   // ================= INTERAKSI DOM LAINNYA =================
@@ -855,10 +1003,13 @@ function startApp() {
     modeBtn.classList.remove("skakmat-mode");
 
     if (currentMode === "skakmat") {
+      modeBtn.classList.remove("normal-mode");
       modeBtn.classList.add("skakmat-mode");
       modeBtn.innerText = "☠️ SKAKMAT";
     } else {
       modeBtn.innerText = "🟢 NORMAL";
+      modeBtn.classList.remove("skakmat-mode");
+      modeBtn.classList.add("normal-mode");
     }
     performSearch();
   });
