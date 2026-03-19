@@ -495,6 +495,7 @@ function startApp() {
       candidates = candidates.filter((w) => w.endsWith(customSuf));
     }
 
+    // VERSI TURBO UNTUK PERHITUNGAN RANKING
     const ranked = candidates.map((word) => {
       const prefixResults = {};
       let autoWin = false;
@@ -503,9 +504,9 @@ function startApp() {
       for (let len = 1; len <= MAX_PREFIX_LENGTH; len++) {
         if (word.length < len) continue;
         const suf = word.slice(-len);
-        const nextOptions =
-          prefixMap[len][suf]?.filter((w) => w !== word && !usedWords.has(w))
-            .length || 0;
+
+        // Panggil fungsi Turbo yang baru dibuat
+        const nextOptions = countNextOptions(suf, word);
 
         prefixResults[len] = nextOptions;
         if (nextOptions === 0) autoWin = true;
@@ -576,14 +577,34 @@ function startApp() {
     return s;
   }
 
+  // ================= PENGHITUNG SUPER CEPAT (PENGGANTI .filter) =================
   function countNextOptions(prefix, currentWord) {
-    const len = prefix.length;
-    const list = prefixMap[len][prefix] || [];
-    return list.filter((w) => w !== currentWord && !usedWords.has(w)).length;
+    const len = Math.min(prefix.length, MAX_PREFIX_LENGTH);
+    const list = prefixMap[len][prefix];
+    if (!list) return 0;
+
+    let count = 0;
+    // Pakai For Loop biasa agar 10x lebih ringan dari .filter()
+    for (let i = 0; i < list.length; i++) {
+      const w = list[i];
+      if (w !== currentWord && !usedWords.has(w)) {
+        count++;
+      }
+    }
+    return count;
   }
 
   function autoSkakmat(prefixAwal, wordList) {
-    const candidates = wordList.filter((w) => w.startsWith(prefixAwal));
+    // AMBIL DARI PREFIX MAP BIAR INSTAN (Tidak perlu scan ratusan ribu kata lagi)
+    const inputLength = Math.min(prefixAwal.length, MAX_PREFIX_LENGTH);
+    const basePrefix = prefixAwal.slice(0, inputLength);
+    let candidates = prefixMap[inputLength][basePrefix] || [];
+
+    // Jika user ngetik lebih dari 3 huruf, baru filter sisanya
+    if (prefixAwal.length > MAX_PREFIX_LENGTH) {
+      candidates = candidates.filter((w) => w.startsWith(prefixAwal));
+    }
+
     const results = [];
 
     for (const word of candidates) {
@@ -595,7 +616,9 @@ function startApp() {
       let minCount = Infinity;
 
       for (const suf of suffixes) {
+        // Panggil fungsi Turbo
         const nextCount = countNextOptions(suf, word);
+
         if (nextCount < minCount) {
           minCount = nextCount;
           bestSuffix = suf;
@@ -611,6 +634,7 @@ function startApp() {
       });
     }
 
+    // Sisa sorting sama seperti sebelumnya
     results.sort((a, b) => {
       const aUsed = usedWords.has(a.word);
       const bUsed = usedWords.has(b.word);
